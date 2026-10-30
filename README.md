@@ -14,7 +14,7 @@ interface and Canvas rendering use plain HTML, CSS, and JavaScript.
 ## Project structure
 
 ```text
-reach_avoid_webpage/
+non-traversable-reach-avoid/
 ├── index.html                Page structure
 ├── styles.css                Layout and visual styles
 ├── app.js                    UI, Canvas rendering, and Pyodide bridge

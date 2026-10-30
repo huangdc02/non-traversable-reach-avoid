@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Reach–Avoid</title>
-  <link rel="stylesheet" href="styles.css?v=20261030-spring-joystick">
+  <link rel="stylesheet" href="styles.css?v=20261030-aligned-defaults">
   <script defer src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
-  <script defer src="app.js?v=20261030-spring-joystick"></script>
+  <script defer src="app.js?v=20261030-aligned-defaults"></script>
 </head>
 <body data-mode="barrier">
   <header class="topbar">
@@ -42,7 +42,7 @@
         <legend>Defenders</legend>
         <div class="coordinate-row"><span class="agent-label d1">D1</span><label><span>x</span><input id="bD1x" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="bD1y" type="number" min="-10" max="10" step="0.05"></label></div>
         <div class="coordinate-row"><span class="agent-label d2">D2</span><label><span>x</span><input id="bD2x" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="bD2y" type="number" min="-10" max="10" step="0.05"></label></div>
-        <div class="summary-row"><span>Speed ratio</span><output id="barrierSpeedSummary">α 0.667 · β 1.000</output></div>
+        <div class="summary-row"><span>Speed ratio</span><output id="barrierSpeedSummary">&alpha;=0.667  &beta;=1.000</output></div>
       </fieldset>
       <button id="resetBarrier" class="primary-action" type="button" disabled data-solver-control>Reset</button>
       <fieldset class="standalone-options" disabled data-solver-control>
@@ -54,8 +54,8 @@
           <fieldset disabled data-solver-control>
             <legend>Parameters</legend>
             <label id="radiusLabel" class="control-row"><span>Radius</span><input id="bRadius" type="number" min="0.1" step="0.1"></label>
-            <label class="control-row"><span>α · v<sub>A</sub>/v<sub>D2</sub></span><input id="bAlpha" type="number" min="0.05" max="0.99" step="0.01"></label>
-            <label class="control-row"><span>β · v<sub>D2</sub>/v<sub>D1</sub></span><input id="bBeta" type="number" min="0.05" step="0.01"></label>
+            <label class="control-row"><span>&alpha;=v<sub>A</sub>/v<sub>D2</sub></span><input id="bAlpha" type="number" min="0.05" max="0.99" step="0.01"></label>
+            <label class="control-row"><span>&beta;=v<sub>D2</sub>/v<sub>D1</sub></span><input id="bBeta" type="number" min="0.05" step="0.01"></label>
           </fieldset>
           <fieldset id="polygonControls" class="hidden" disabled data-solver-control>
             <legend>Polygon vertices</legend>

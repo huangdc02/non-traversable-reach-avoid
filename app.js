@@ -3,7 +3,8 @@
 const $ = (id) => document.getElementById(id);
 const COORDINATE_LIMIT = 10;
 const SIMULATION_TIME_LIMIT = 15;
-const ASSET_VERSION = "20261030-spring-joystick";
+const ASSET_VERSION = "20261030-aligned-defaults";
+const PY_ROOT = "/non-traversable-reach-avoid/scripts";
 const PY_FILES = [
   "barrier/geometry_common.py", "barrier/circle_barrier.py", "barrier/polygon_barrier.py",
   "strategy/otp_solver.py", "strategy/equilibrium_strategy.py",
@@ -44,7 +45,7 @@ function setDefaults() {
   setNumber("bRadius", 1); setNumber("bAlpha", 2/3); setNumber("bBeta", 1);
   setNumber("sAx", -0.406422989); setNumber("sAy", -3.339212412);
   setNumber("sD1x", 0); setNumber("sD1y", 1.5);
-  setNumber("sD2x", -2.3); setNumber("sD2y", -3.8); setNumber("sRadius", 1);
+  setNumber("sD2x", -2); setNumber("sD2y", 0); setNumber("sRadius", 1);
   setNumber("sVA", .2); setNumber("sVD1", .3); setNumber("sVD2", .3); setNumber("simDt", .05);
   syncPolygonText(); updateBarrierSpeedSummary(); updatePlaybackUI();
 }
@@ -495,10 +496,10 @@ async function initialize() {
   setDefaults();bindUI();requestAnimationFrame(render);
   try {
     app.pyodide=await loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.27.7/full/"});
-    await app.pyodide.loadPackage("numpy");app.pyodide.FS.mkdirTree("/reach_avoid_webpage/scripts");
-    for(const directory of ["barrier","strategy","simulation","api"])app.pyodide.FS.mkdirTree(`/reach_avoid_webpage/scripts/${directory}`);
-    await Promise.all(PY_FILES.map(async name=>{const url=new URL(`scripts/${name}`,document.baseURI);url.searchParams.set("v",ASSET_VERSION);const response=await fetch(url,{cache:"no-store"});if(!response.ok)throw new Error(`Could not load scripts/${name}`);app.pyodide.FS.writeFile(`/reach_avoid_webpage/scripts/${name}`,await response.text())}));
-    await app.pyodide.runPythonAsync("import inspect, sys\nfor name in ('barrier','strategy','simulation','api'):\n    sys.path.insert(0, f'/reach_avoid_webpage/scripts/{name}')\nimport web_api\nif len(inspect.signature(web_api.simulation_step).parameters) < 5:\n    raise RuntimeError('incompatible cached web_api.py')");
+    await app.pyodide.loadPackage("numpy");app.pyodide.FS.mkdirTree(PY_ROOT);
+    for(const directory of ["barrier","strategy","simulation","api"])app.pyodide.FS.mkdirTree(`${PY_ROOT}/${directory}`);
+    await Promise.all(PY_FILES.map(async name=>{const url=new URL(`scripts/${name}`,document.baseURI);url.searchParams.set("v",ASSET_VERSION);const response=await fetch(url,{cache:"no-store"});if(!response.ok)throw new Error(`Could not load scripts/${name}`);app.pyodide.FS.writeFile(`${PY_ROOT}/${name}`,await response.text())}));
+    await app.pyodide.runPythonAsync(`import inspect, sys\nfor name in ('barrier','strategy','simulation','api'):\n    sys.path.insert(0, '${PY_ROOT}/' + name)\nimport web_api\nif len(inspect.signature(web_api.simulation_step).parameters) < 5:\n    raise RuntimeError('incompatible cached web_api.py')`);
     document.querySelectorAll("[data-solver-control]").forEach(x=>x.disabled=false);
     setSolverStatus("Solver ready","ready");hideMessage();await computeBarrier();
   } catch(error) { setSolverStatus("Solver failed","error");showMessage(`Pyodide initialization failed: ${cleanError(error)}`); }
