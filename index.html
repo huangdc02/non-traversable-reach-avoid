@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2D1A reach-avoid game</title>
-  <link rel="stylesheet" href="styles.css?v=20261030-site-title">
+  <link rel="stylesheet" href="styles.css?v=20261030-canvas-pan">
   <script defer src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
-  <script defer src="app.js?v=20261030-greek-labels"></script>
+  <script defer src="app.js?v=20261030-canvas-pan"></script>
 </head>
 <body data-mode="barrier">
   <header class="topbar">
@@ -93,7 +93,7 @@
         <div><span>Status</span><output id="currentStatus">Ready</output></div>
       </div>
       <fieldset class="standalone-options" disabled data-solver-control>
-        <label class="check-row"><input id="liveSimulationBarrier" type="checkbox"><span>Show realtime barrier</span></label>
+        <label class="check-row"><input id="liveSimulationBarrier" type="checkbox" checked><span>Show realtime barrier</span></label>
       </fieldset>
       <details class="more">
         <summary>More</summary>

@@ -2,8 +2,8 @@
 
 const $ = (id) => document.getElementById(id);
 const COORDINATE_LIMIT = 10;
-const SIMULATION_TIME_LIMIT = 15;
-const ASSET_VERSION = "20261030-greek-labels";
+const JOYSTICK_TRAVEL = 55;
+const ASSET_VERSION = "20261030-canvas-pan";
 const PY_ROOT = "/non-traversable-reach-avoid/scripts";
 const PY_FILES = [
   "barrier/geometry_common.py", "barrier/circle_barrier.py", "barrier/polygon_barrier.py",
@@ -25,7 +25,7 @@ const refs = {
 
 const app = {
   pyodide: null, mode: "barrier", barrier: null, sim: null, running: false,
-  computingBarrier: false, barrierQueued: false, drag: null,
+  computingBarrier: false, barrierQueued: false, drag: null, pan: null,
   lastStepWall: 0, stepping: false, transform: null,
   manualPlayer: null, manualHeading: null, manualSpeed: 0, joystickPointer: null,
   views: {barrier:null, simulation:null},
@@ -43,7 +43,7 @@ function fmtPoint(p) { return p ? `(${p[0].toFixed(4)}, ${p[1].toFixed(4)})` : "
 function setDefaults() {
   setNumber("bD1x", 0); setNumber("bD1y", 1.5); setNumber("bD2x", -2); setNumber("bD2y", 0);
   setNumber("bRadius", 1); setNumber("bAlpha", 2/3); setNumber("bBeta", 1);
-  setNumber("sAx", -0.406422989); setNumber("sAy", -3.339212412);
+  setNumber("sAx", 1.4444226407401126); setNumber("sAy", -2.5018134013646818);
   setNumber("sD1x", 0); setNumber("sD1y", 1.5);
   setNumber("sD2x", -2); setNumber("sD2y", 0); setNumber("sRadius", 1);
   setNumber("sVA", .2); setNumber("sVD1", .3); setNumber("sVD2", .3); setNumber("simDt", .05);
@@ -66,7 +66,7 @@ function updateJoystick() {
   refs.joystickPanel.classList.toggle("hidden",!active);
   if(active)refs.joystickPlayer.textContent=app.manualPlayer;
   const angle=app.manualHeading,speed=app.manualSpeed;
-  const radius=35;
+  const radius=JOYSTICK_TRAVEL;
   refs.joystickKnob.style.left=angle===null?"50%":`calc(50% + ${radius*speed*Math.cos(angle)}px)`;
   refs.joystickKnob.style.top=angle===null?"50%":`calc(50% - ${radius*speed*Math.sin(angle)}px)`;
   const text=angle===null?"Centered":`${Math.round(angle*180/Math.PI)}° · ${Math.round(speed*100)}%`;
@@ -79,7 +79,7 @@ function setJoystickFromPointer(event) {
   const rect=refs.joystick.getBoundingClientRect();
   const dx=event.clientX-(rect.left+rect.width/2);
   const dy=event.clientY-(rect.top+rect.height/2);
-  const radius=35,deadZone=.08;
+  const radius=JOYSTICK_TRAVEL,deadZone=.08;
   const rawSpeed=Math.min(1,Math.hypot(dx,dy)/radius);
   app.manualSpeed=Math.max(0,(rawSpeed-deadZone)/(1-deadZone));
   app.manualHeading=app.manualSpeed===0?null:Math.atan2(-dy,dx);
@@ -98,7 +98,7 @@ function barrierConfig() {
 
 function simulationConfig() {
   return {A:point("sAx","sAy"), D1:point("sD1x","sD1y"), D2:point("sD2x","sD2y"),
-    R:number("sRadius"), v_A:number("sVA"), v_D1:number("sVD1"), v_D2:number("sVD2"), t_max:SIMULATION_TIME_LIMIT,
+    R:number("sRadius"), v_A:number("sVA"), v_D1:number("sVD1"), v_D2:number("sVD2"),
     barrier_resolution:180};
 }
 
@@ -380,7 +380,9 @@ function renderValue(now) {
   const ts=app.sim?.value_times||[],vs=app.sim?.value_history||[];
   const pad={l:48*scale,r:18*scale,t:14*scale,b:30*scale};
   const plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;
-  const tMax=Math.max(SIMULATION_TIME_LIMIT,ts.at(-1)||0,1);
+  const elapsed=Math.max(ts.at(-1)||0,app.sim?.time||0);
+  const timeStep=elapsed<=10?1:elapsed<=60?5:elapsed<=300?30:60;
+  const tMax=Math.max(timeStep,Math.ceil(elapsed/timeStep)*timeStep);
   let vMin=vs.length?Math.min(0,...vs):-.05,vMax=vs.length?Math.max(0,...vs):.05;
   if(vMax-vMin<.05){const center=(vMax+vMin)/2;vMin=center-.025;vMax=center+.025;}
   const xy=(t,v)=>[pad.l+t/tMax*plotW,pad.t+(vMax-v)/(vMax-vMin)*plotH];
@@ -425,13 +427,27 @@ function nearestDraggable(canvasPoint) {
   else if(!app.running && (!app.sim || app.sim.time===0)) { const c=simulationConfig();candidates.push(["sA",c.A],["sD1",c.D1],["sD2",c.D2]); }
   let best=null,distance=18;for(const [name,p] of candidates){const q=app.transform.toCanvas(p),d=Math.hypot(q[0]-canvasPoint[0],q[1]-canvasPoint[1]);if(d<distance){best=name;distance=d}}return best;
 }
-refs.geometry.addEventListener("pointerdown",e=>{if(!app.pyodide)return;const p=pointerPosition(e);app.drag=nearestDraggable(p);if(app.drag){if(app.drag==="sD1"||app.drag==="sD2")clearTimeout(simulationTimer);refs.geometry.setPointerCapture(e.pointerId);e.preventDefault();}});
-refs.geometry.addEventListener("pointermove",e=>{if(!app.drag)return;const p=canvasToWorld(...pointerPosition(e));
+refs.geometry.addEventListener("pointerdown",e=>{
+  if(!app.pyodide||!app.transform||e.button!==0)return;
+  const p=pointerPosition(e);app.drag=nearestDraggable(p);refs.geometry.setPointerCapture(e.pointerId);
+  if(app.drag){if(app.drag==="sD1"||app.drag==="sD2")clearTimeout(simulationTimer)}
+  else {
+    const view=app.views[app.mode]||{cx:app.transform.cx,cy:app.transform.cy,span:Math.min(app.transform.width-84,app.transform.height-84)/app.transform.scale};
+    app.pan={pointerId:e.pointerId,start:p,view:{...view},scale:app.transform.scale};refs.geometry.classList.add("is-panning");
+  }
+  e.preventDefault();
+});
+refs.geometry.addEventListener("pointermove",e=>{
+  if(app.pan&&e.pointerId===app.pan.pointerId){
+    const p=pointerPosition(e),dx=p[0]-app.pan.start[0],dy=p[1]-app.pan.start[1];
+    app.views[app.mode]={...app.pan.view,cx:app.pan.view.cx-dx/app.pan.scale,cy:app.pan.view.cy+dy/app.pan.scale};return;
+  }
+  if(!app.drag)return;const p=canvasToWorld(...pointerPosition(e));
   const bounded=p.map(clampCoordinate);
   if(app.drag.startsWith("vertex:")){app.polygon[Number(app.drag.split(":")[1])]=bounded;syncPolygonText();scheduleBarrier();}
   else { const map={bD1:["bD1x","bD1y"],bD2:["bD2x","bD2y"],sA:["sAx","sAy"],sD1:["sD1x","sD1y"],sD2:["sD2x","sD2y"]};setNumber(map[app.drag][0],bounded[0]);setNumber(map[app.drag][1],bounded[1]);if(app.mode==="barrier")scheduleBarrier();else if(app.drag==="sA")scheduleSimulationReset(); }
 });
-function finishDrag() { const dragged=app.drag;app.drag=null;if(dragged?.startsWith("s"))scheduleSimulationReset(0); }
+function finishDrag() { const dragged=app.drag;app.drag=null;app.pan=null;refs.geometry.classList.remove("is-panning");if(dragged?.startsWith("s"))scheduleSimulationReset(0); }
 refs.geometry.addEventListener("pointerup",finishDrag);refs.geometry.addEventListener("pointercancel",finishDrag);
 
 function resetBarrierInputs() {

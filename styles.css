@@ -18,7 +18,8 @@ main { width:min(1500px,100%); min-height:calc(100vh - 56px); display:grid; grid
 .workspace { min-width:0; display:flex; flex-direction:column; gap:14px; }
 .geometry-stage { min-height:0; flex:1 1 auto; position:relative; background:var(--surface); border:1px solid var(--line); }
 canvas { display:block; width:100%; background:var(--surface); }
-#geometryCanvas { height:calc(100vh - 94px); min-height:480px; touch-action:none; }
+#geometryCanvas { height:calc(100vh - 94px); min-height:480px; cursor:grab; touch-action:none; }
+#geometryCanvas.is-panning { cursor:grabbing; }
 body[data-mode=simulation] #geometryCanvas { height:calc(75vh - 72px); min-height:390px; }
 .canvas-message { position:absolute; z-index:2; left:50%; top:18px; translate:-50% 0; display:none; max-width:min(520px,calc(100% - 32px)); padding:9px 13px; border:1px solid var(--line); border-radius:4px; background:rgba(255,255,255,.96); color:var(--muted); text-align:center; }
 .canvas-message.show { display:block; }
@@ -46,7 +47,7 @@ label { min-width:0; }
 .joystick-panel { display:grid; justify-items:center; gap:10px; margin:-7px 0 18px; padding:12px; border-block:1px solid var(--line); }
 .joystick-heading { width:100%; display:flex; justify-content:space-between; color:var(--muted); font-size:12px; }
 .joystick-heading span { color:var(--ink); font-weight:680; }
-.virtual-joystick { position:relative; isolation:isolate; width:112px; height:112px; overflow:hidden; border:1px solid #c9ceca; border-radius:50%; background:#fafbf9; cursor:crosshair; touch-action:none; }
+.virtual-joystick { position:relative; isolation:isolate; width:112px; height:112px; margin:16px 0; overflow:visible; border:1px solid #c9ceca; border-radius:50%; background:#fafbf9; cursor:crosshair; touch-action:none; }
 .virtual-joystick::before,.virtual-joystick::after { content:""; position:absolute; z-index:0; background:#e4e7e3; pointer-events:none; }
 .virtual-joystick::before { left:50%; top:0; width:1px; height:100%; }
 .virtual-joystick::after { left:0; top:50%; width:100%; height:1px; }

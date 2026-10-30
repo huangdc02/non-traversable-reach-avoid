@@ -105,18 +105,16 @@ class EquilibriumSimulation:
             "v_D2": float(config.get("v_D2", defender_speed)),
             "constraint_tol": float(config.get("constraint_tol", 1e-7)),
         }
-        self.t_max = float(config.get("t_max", 15.0))
         self.goal_tolerance = float(config.get("goal_tolerance", 1e-3))
         self.capture_tolerance = float(config.get("capture_tolerance", 1e-2))
         self.barrier_resolution = max(160, int(config.get("barrier_resolution", 180)))
         values = [
             *self.params.values(),
-            self.t_max,
             self.goal_tolerance,
             self.capture_tolerance,
         ]
         if not np.all(np.isfinite(values)) or min(values) <= 0.0:
-            raise ValueError("radius, speeds, time, and tolerances must be positive")
+            raise ValueError("radius, speeds, and tolerances must be positive")
         if self.params["v_A"] > min(self.params["v_D1"], self.params["v_D2"]) * (
             1.0 + 1e-12
         ):
@@ -253,10 +251,6 @@ class EquilibriumSimulation:
         if np.linalg.norm(self.state["A"]) <= self.params["R"] + self.goal_tolerance:
             self._finish("Attacker reaches target")
             return self.snapshot()
-        if self.time >= self.t_max - 1e-12:
-            self._finish("Time limit reached")
-            return self.snapshot()
-
         solution = solve_equilibrium(self.state, self.params)
         if not solution["success"]:
             self._finish("Solver failure")
@@ -291,7 +285,7 @@ class EquilibriumSimulation:
         self.value_times.append(float(self.time))
         self.values.append(self.value)
 
-        step_time = min(dt, self.t_max - self.time)
+        step_time = dt
         attack_distance = float(np.linalg.norm(self.otp - self.state["A"]))
         if manual_player != "A" and attack_distance > 1e-14:
             step_time = min(step_time, attack_distance / self.params["v_A"])
@@ -370,8 +364,6 @@ class EquilibriumSimulation:
             self.barrier_is_live = False
         if event is not None:
             self._finish(event)
-        elif self.time >= self.t_max - 1e-12:
-            self._finish("Time limit reached")
         return self.snapshot()
 
     def snapshot(self) -> dict[str, Any]:

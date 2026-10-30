@@ -95,7 +95,6 @@ initial = {
     "R": 1,
     "v_A": 0.2,
     "v_D": 0.3,
-    "t_max": 15,
     "barrier_resolution": 160,
 }
 initial_state = json.loads(web_api.init_simulation(initial))
