@@ -1,4 +1,4 @@
-# Reach–Avoid Web Demo
+# Non-traversable 2D1A reach-avoid game interactive website
 
 ## Overview
 
