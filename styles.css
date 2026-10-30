@@ -88,7 +88,8 @@ button:disabled,fieldset:disabled { cursor:not-allowed; opacity:.5; }
 .readout { overflow-wrap:anywhere; white-space:pre-line; padding-top:12px; border-top:1px solid var(--line); color:var(--muted); font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; }
 .hidden { display:none!important; }
 @media(max-width:850px) {
-  .topbar { grid-template-columns:auto 1fr auto; padding:0 14px; }
+  .topbar { grid-template-columns:minmax(0,1fr) auto auto; gap:10px; padding:0 14px; }
+  .brand { max-width:240px; line-height:1.15; }
   .mode-switch { justify-self:center; }
   .tab { padding-inline:12px; }
   .solver-status span:last-child { display:none; }
@@ -97,8 +98,11 @@ button:disabled,fieldset:disabled { cursor:not-allowed; opacity:.5; }
   #valueCanvas { height:170px; }
   .panel { width:100%; }
 }
+@media(max-width:600px) {
+  .brand { max-width:150px; font-size:13px; }
+}
 @media(max-width:430px) {
-  .brand { font-size:14px; }
+  .brand { max-width:125px; font-size:11px; }
   .topbar { padding-inline:10px; }
   .tab { padding-inline:9px; font-size:13px; }
   main { padding:8px; gap:10px; }

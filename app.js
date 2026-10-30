@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 const COORDINATE_LIMIT = 10;
 const SIMULATION_TIME_LIMIT = 15;
-const ASSET_VERSION = "20261030-aligned-defaults";
+const ASSET_VERSION = "20261030-greek-labels";
 const PY_ROOT = "/non-traversable-reach-avoid/scripts";
 const PY_FILES = [
   "barrier/geometry_common.py", "barrier/circle_barrier.py", "barrier/polygon_barrier.py",
@@ -51,7 +51,7 @@ function setDefaults() {
 }
 
 function updateBarrierSpeedSummary() {
-  $("barrierSpeedSummary").textContent = `α ${number("bAlpha").toFixed(3)} · β ${number("bBeta").toFixed(3)}`;
+  $("barrierSpeedSummary").textContent = `α=${number("bAlpha").toFixed(3)}\u00a0\u00a0β=${number("bBeta").toFixed(3)}`;
 }
 
 function updatePlaybackUI() {
@@ -204,7 +204,7 @@ function updateSimInfo() {
   if (!app.sim) return;
   const s=app.sim;
   const sigma=s.lift_pair ? `(${s.lift_pair.map(v=>v>0?"+1":"−1").join(", ")})` : "—";
-  refs.simInfo.textContent = `t      ${s.time.toFixed(4)}\nA      ${fmtPoint(s.A)}\nD1     ${fmtPoint(s.D1)}\nD2     ${fmtPoint(s.D2)}\nsigma  ${sigma}\nV      ${s.V == null ? "—" : s.V.toFixed(7)}`;
+  refs.simInfo.textContent = `t      ${s.time.toFixed(4)}\nA      ${fmtPoint(s.A)}\nD1     ${fmtPoint(s.D1)}\nD2     ${fmtPoint(s.D2)}\nσ      ${sigma}\nV      ${s.V == null ? "—" : s.V.toFixed(7)}`;
   refs.currentTime.textContent=s.time.toFixed(3);
   refs.currentStatus.textContent=s.result || (app.running ? "Running" : s.time ? "Paused" : "Ready");
   refs.currentValue.textContent=`V(t) = ${s.V == null ? "—" : s.V.toFixed(3)}`;
