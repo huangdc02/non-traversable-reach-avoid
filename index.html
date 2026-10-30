@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reach–Avoid</title>
+  <link rel="stylesheet" href="styles.css?v=20261030-spring-joystick">
+  <script defer src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+  <script defer src="app.js?v=20261030-spring-joystick"></script>
+</head>
+<body data-mode="barrier">
+  <header class="topbar">
+    <a class="brand" href="#main">Reach–Avoid</a>
+    <nav class="mode-switch" aria-label="Visualization mode">
+      <button class="tab active" data-tab="barrier" aria-pressed="true">Barrier</button>
+      <button class="tab" data-tab="simulation" aria-pressed="false">Simulation</button>
+    </nav>
+    <div id="solverStatus" class="solver-status loading" role="status"><span class="status-dot" aria-hidden="true"></span><span>Loading solver…</span></div>
+  </header>
+
+  <main id="main">
+    <section class="workspace" aria-label="Reach-avoid visualization">
+      <div class="geometry-stage">
+        <canvas id="geometryCanvas" aria-label="Interactive reach-avoid geometry"></canvas>
+        <div id="canvasMessage" class="canvas-message" role="status"></div>
+      </div>
+      <section id="valuePanel" class="value-panel hidden" aria-labelledby="valueTitle">
+        <button id="valueToggle" class="value-header" type="button" aria-expanded="true" aria-controls="valuePlotBody">
+          <span id="valueTitle">Value function</span>
+          <span class="value-header-right"><output id="currentValue">V(t) = —</output><span class="chevron" aria-hidden="true">⌃</span></span>
+        </button>
+        <div id="valuePlotBody" class="value-plot-body"><canvas id="valueCanvas" aria-label="Value function V against time t"></canvas></div>
+      </section>
+    </section>
+
+    <aside id="barrierPanel" class="panel" aria-label="Barrier controls">
+      <fieldset disabled data-solver-control>
+        <legend>Barrier</legend>
+        <label class="control-row"><span>Goal</span><select id="goalShape"><option value="circle">Circle</option><option value="polygon">Convex polygon</option></select></label>
+      </fieldset>
+      <fieldset disabled data-solver-control>
+        <legend>Defenders</legend>
+        <div class="coordinate-row"><span class="agent-label d1">D1</span><label><span>x</span><input id="bD1x" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="bD1y" type="number" min="-10" max="10" step="0.05"></label></div>
+        <div class="coordinate-row"><span class="agent-label d2">D2</span><label><span>x</span><input id="bD2x" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="bD2y" type="number" min="-10" max="10" step="0.05"></label></div>
+        <div class="summary-row"><span>Speed ratio</span><output id="barrierSpeedSummary">α 0.667 · β 1.000</output></div>
+      </fieldset>
+      <button id="resetBarrier" class="primary-action" type="button" disabled data-solver-control>Reset</button>
+      <fieldset class="standalone-options" disabled data-solver-control>
+        <label class="check-row"><input id="showAux" type="checkbox" checked><span>Show details</span></label>
+      </fieldset>
+      <details class="more">
+        <summary>More</summary>
+        <div class="more-body">
+          <fieldset disabled data-solver-control>
+            <legend>Parameters</legend>
+            <label id="radiusLabel" class="control-row"><span>Radius</span><input id="bRadius" type="number" min="0.1" step="0.1"></label>
+            <label class="control-row"><span>α · v<sub>A</sub>/v<sub>D2</sub></span><input id="bAlpha" type="number" min="0.05" max="0.99" step="0.01"></label>
+            <label class="control-row"><span>β · v<sub>D2</sub>/v<sub>D1</sub></span><input id="bBeta" type="number" min="0.05" step="0.01"></label>
+          </fieldset>
+          <fieldset id="polygonControls" class="hidden" disabled data-solver-control>
+            <legend>Polygon vertices</legend>
+            <textarea id="polygonText" rows="6" spellcheck="false" aria-label="One x,y polygon vertex per line"></textarea>
+            <div class="button-row"><button id="applyPolygon" type="button">Apply</button><button id="addVertex" type="button">Add</button><button id="removeVertex" type="button">Remove</button></div>
+          </fieldset>
+          <div id="barrierInfo" class="readout">Waiting for solver…</div>
+        </div>
+      </details>
+    </aside>
+
+    <aside id="simulationPanel" class="panel hidden" aria-label="Simulation controls">
+      <fieldset disabled data-solver-control>
+        <legend>Players</legend>
+        <div class="manual-column-title">Manual input</div>
+        <div class="coordinate-row simulation-player-row"><span class="agent-label attacker">A</span><label><span>x</span><input id="sAx" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="sAy" type="number" min="-10" max="10" step="0.05"></label><label class="manual-choice" title="Control A with the joystick"><input type="checkbox" data-manual-player="A" aria-label="Manual input for A"></label></div>
+        <div class="coordinate-row simulation-player-row"><span class="agent-label d1">D1</span><label><span>x</span><input id="sD1x" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="sD1y" type="number" min="-10" max="10" step="0.05"></label><label class="manual-choice" title="Control D1 with the joystick"><input type="checkbox" data-manual-player="D1" aria-label="Manual input for D1"></label></div>
+        <div class="coordinate-row simulation-player-row"><span class="agent-label d2">D2</span><label><span>x</span><input id="sD2x" type="number" min="-10" max="10" step="0.05"></label><label><span>y</span><input id="sD2y" type="number" min="-10" max="10" step="0.05"></label><label class="manual-choice" title="Control D2 with the joystick"><input type="checkbox" data-manual-player="D2" aria-label="Manual input for D2"></label></div>
+      </fieldset>
+      <section id="joystickPanel" class="joystick-panel hidden" aria-label="Manual direction control">
+        <div class="joystick-heading"><span id="joystickPlayer">A</span><output id="joystickAngle">Centered</output></div>
+        <div id="virtualJoystick" class="virtual-joystick" role="slider" tabindex="0" aria-label="Manual movement speed and direction" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Centered">
+          <span id="joystickKnob" class="joystick-knob" aria-hidden="true"></span>
+        </div>
+      </section>
+      <fieldset class="playback-controls" disabled data-solver-control aria-label="Playback controls">
+        <div class="transport">
+          <button id="playPauseSim" class="play-button" type="button" aria-label="Start simulation"><span aria-hidden="true">▶</span><span class="button-label">Play</span></button>
+          <button id="stepSim" type="button" aria-label="Advance one simulation step">Step</button>
+          <button id="resetSim" type="button">Reset</button>
+        </div>
+      </fieldset>
+      <div class="simulation-summary" aria-live="polite">
+        <div><span>Time</span><output id="currentTime">0.000</output></div>
+        <div><span>Status</span><output id="currentStatus">Ready</output></div>
+      </div>
+      <fieldset class="standalone-options" disabled data-solver-control>
+        <label class="check-row"><input id="liveSimulationBarrier" type="checkbox"><span>Show realtime barrier</span></label>
+      </fieldset>
+      <details class="more">
+        <summary>More</summary>
+        <div class="more-body">
+          <fieldset disabled data-solver-control>
+            <legend>Game parameters</legend>
+            <div class="pair"><label><span>Radius</span><input id="sRadius" type="number" min="0.1" step="0.1"></label><label><span>v<sub>A</sub></span><input id="sVA" type="number" min="0.01" step="0.05"></label></div>
+            <div class="pair"><label><span>v<sub>D1</sub></span><input id="sVD1" type="number" min="0.01" step="0.05"></label><label><span>v<sub>D2</sub></span><input id="sVD2" type="number" min="0.01" step="0.05"></label></div>
+            <label class="control-row"><span>dt</span><input id="simDt" type="number" min="0.001" step="0.01"></label>
+          </fieldset>
+          <div id="simInfo" class="readout">Waiting for solver…</div>
+        </div>
+      </details>
+    </aside>
+  </main>
+</body>
+</html>
