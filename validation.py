@@ -21,7 +21,7 @@ from otp_solver import (  # noqa: E402
     solve_1d1a_otp,
     solve_2d1a_otp,
 )
-from simulation import _advance_manual_defender  # noqa: E402
+from simulation import EquilibriumSimulation, _advance_manual_defender  # noqa: E402
 
 
 def close(actual, expected, tolerance):
@@ -164,6 +164,29 @@ tangent_slide = json.loads(
 )
 close(tangent_slide["D1"], [-0.1, 1.0], 2e-12)
 close(np.linalg.norm(tangent_slide["D1"]), sqrt(1.01), 2e-12)
+
+cooperative_initial = {
+    **initial,
+    "A": [1.4444226407401126, -2.5018134013646818],
+    "D2": [-2, 0],
+}
+cooperative_sim = EquilibriumSimulation(cooperative_initial)
+assert not cooperative_sim._in_attacker_winning_region()
+entered = cooperative_sim.step(0.05, False, "D1", None)
+assert not entered["terminated"]
+entered = cooperative_sim.step(0.05, False, "D1", None)
+assert entered["terminated"]
+assert entered["result"] == "Game enters attacker's winning region"
+assert entered["time"] == 0.05
+assert cooperative_sim.step(0.05, False, "D1", None) == entered
+
+inside_sim = EquilibriumSimulation(cooperative_initial)
+inside_sim.state["A"] *= 0.99
+inside = inside_sim.step(0.05)
+assert inside["terminated"]
+assert inside["result"] == "Game enters attacker's winning region"
+assert inside["time"] == 0.0
+assert inside["otp"] is None
 
 constrained = json.loads(web_api.init_simulation({**initial, "A": [0, 0]}))
 assert constrained["attacker_constrained"]

@@ -195,7 +195,10 @@ async function stepSimulation() {
     const manualPlayer=app.manualPlayer===null?"None":JSON.stringify(app.manualPlayer);
     const manualHeading=app.manualHeading===null?"None":String(app.manualHeading);
     app.sim=JSON.parse(await app.pyodide.runPythonAsync(`web_api.simulation_step(${number("simDt")}, ${liveBarrier}, ${manualPlayer}, ${manualHeading}, ${app.manualSpeed})`));
-    updateSimInfo(); if (app.sim.terminated) { app.running=false; updatePlaybackUI(); }
+    updateSimInfo(); if (app.sim.terminated) {
+      app.running=false; updatePlaybackUI();
+      if(app.sim.result==="Game enters attacker's winning region")showMessage(app.sim.result);
+    }
   } catch(error) { app.running=false; showMessage(cleanError(error)); }
   finally { app.stepping=false; }
 }

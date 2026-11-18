@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 
-from barrier_classifier import project_attacker_outside_barrier
+from barrier_classifier import classify_state, project_attacker_outside_barrier
 from circle_barrier import compute_geometry_scene as circle_scene
 from equilibrium_strategy import solve_equilibrium
 from otp_solver import advance_dsp
@@ -214,6 +214,19 @@ class EquilibriumSimulation:
         self.terminated = True
         self.result = result
 
+    def _in_attacker_winning_region(self) -> bool:
+        state = dict(self.state)
+        radius = self.params["R"]
+        # HSP integration can leave a boundary defender a few ulps inside R.
+        for defender in ("D1", "D2"):
+            norm = float(np.linalg.norm(state[defender]))
+            if norm < radius:
+                state[defender] = state[defender] * ((radius + 1e-12) / norm)
+        outcome = classify_state(
+            state, self.params, tolerance=self.params["constraint_tol"]
+        )
+        return outcome["region"] == "inside"
+
     def step(
         self,
         dt: float,
@@ -253,7 +266,11 @@ class EquilibriumSimulation:
             return self.snapshot()
         solution = solve_equilibrium(self.state, self.params)
         if not solution["success"]:
-            self._finish("Solver failure")
+            self._finish(
+                "Game enters attacker's winning region"
+                if self._in_attacker_winning_region()
+                else "Solver failure"
+            )
             return self.snapshot()
         self.otp = np.asarray(solution["otp"], dtype=float).copy()
         self.otp_lift = np.asarray(solution["otp_lift"], dtype=float).copy()
